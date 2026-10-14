@@ -1,0 +1,61 @@
+name: products-datadog
+
+services:
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7
+    container_name: dd-agent
+    restart: unless-stopped
+    environment:
+      DD_API_KEY: ${DD_API_KEY:?Define DD_API_KEY en el archivo .env}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_HOSTNAME: ${DD_HOSTNAME:-products-local}
+      DD_ENV: ${DD_ENV:-development}
+      # APM: necesario para que el Agent procese las trazas recibidas por OTLP
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      # Receptor OTLP (gRPC 4317 / HTTP 4318) para trazas, métricas y logs de OpenTelemetry
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT: 0.0.0.0:4317
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: 0.0.0.0:4318
+      DD_OTLP_CONFIG_LOGS_ENABLED: "true"
+      DD_LOGS_ENABLED: "true"
+      # Usada por el check de Postgres configurado vía labels (%%env_DD_POSTGRES_PASSWORD%%)
+      DD_POSTGRES_PASSWORD: ${DD_POSTGRES_PASSWORD:-datadog}
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8126:8126" # APM (Datadog trace intake)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: products-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-products}
+      POSTGRES_USER: ${POSTGRES_USER:-products}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-products}
+      DD_POSTGRES_PASSWORD: ${DD_POSTGRES_PASSWORD:-datadog}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-datadog.sh:/docker-entrypoint-initdb.d/init-datadog.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    labels:
+      com.datadoghq.tags.service: postgres
+      com.datadoghq.tags.env: ${DD_ENV:-development}
+      # Autodiscovery: el Agent ejecuta el check de Postgres contra este contenedor
+      com.datadoghq.ad.checks: >-
+        {"postgres": {"instances": [{"host": "%%host%%", "port": 5432,
+        "username": "datadog", "password": "%%env_DD_POSTGRES_PASSWORD%%"}]}}
+      com.datadoghq.ad.logs: '[{"source": "postgresql", "service": "postgres"}]'
+
+volumes:
+  pgdata:

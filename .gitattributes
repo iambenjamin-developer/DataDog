@@ -1,0 +1,3 @@
+* text=auto
+# Los scripts que corren dentro de contenedores Linux deben mantener finales de línea LF
+*.sh text eol=lf
