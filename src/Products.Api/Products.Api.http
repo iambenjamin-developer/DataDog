@@ -1,0 +1,52 @@
+@baseUrl = http://localhost:5161
+
+GET {{baseUrl}}/api/products
+
+###
+
+GET {{baseUrl}}/api/products/1
+
+###
+
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Auriculares",
+  "description": "Cancelación de ruido",
+  "price": 129.99,
+  "stock": 15
+}
+
+###
+
+PUT {{baseUrl}}/api/products/1
+Content-Type: application/json
+
+{
+  "name": "Teclado mecánico TKL",
+  "description": "Switches marrones",
+  "price": 79.90,
+  "stock": 30
+}
+
+###
+
+DELETE {{baseUrl}}/api/products/3
+
+###
+
+# Debe devolver 400 (validación)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "",
+  "price": -1,
+  "stock": 0
+}
+
+###
+
+# Debe devolver 404
+GET {{baseUrl}}/api/products/9999
