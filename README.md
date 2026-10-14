@@ -71,5 +71,8 @@ products-api (dotnet run) ──OTLP gRPC :4317──► datadog-agent ──►
 | `ASPNETCORE_ENVIRONMENT`          | `Development`            | Tag `env` (en minúsculas) |
 | `ConnectionStrings__Default`      | ver `appsettings.Development.json` | Conexión a PostgreSQL |
 
+> Si el puerto 5432 ya está ocupado, define `POSTGRES_PORT` en `.env` (p. ej. `5434`) y ejecuta la API con
+> `ConnectionStrings__Default="Host=localhost;Port=5434;Database=products;Username=products;Password=products"`.
+>
 > El script `docker/postgres/init-datadog.sh` solo corre la primera vez que se crea el volumen.
 > Para reiniciar la base de datos desde cero: `docker compose down -v`.
