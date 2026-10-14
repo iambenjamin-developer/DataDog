@@ -4,6 +4,7 @@ services:
   datadog-agent:
     image: gcr.io/datadoghq/agent:7
     container_name: dd-agent
+    pid: host
     restart: unless-stopped
     environment:
       DD_API_KEY: ${DD_API_KEY:?Define DD_API_KEY en el archivo .env}
