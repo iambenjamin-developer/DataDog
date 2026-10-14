@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Products.Api.Data;
 using Products.Api.Models;
+using Products.Api.Telemetry;
 
 namespace Products.Api.Endpoints;
 
@@ -34,6 +36,8 @@ public static class ProductEndpoints
         if (Validate(request) is { } errors)
             return TypedResults.ValidationProblem(errors);
 
+        using var activity = ProductsTelemetry.ActivitySource.StartActivity("product.create");
+
         var product = new Product
         {
             Name = request.Name.Trim(),
@@ -45,6 +49,11 @@ public static class ProductEndpoints
 
         db.Products.Add(product);
         await db.SaveChangesAsync(ct);
+
+        activity?.SetTag("product.id", product.Id);
+        activity?.SetTag("product.name", product.Name);
+        ProductsTelemetry.ProductsCreated.Add(1);
+        ProductsTelemetry.ProductPrice.Record((double)product.Price, new KeyValuePair<string, object?>("operation", "create"));
 
         logger.LogInformation("Producto {ProductId} creado: {ProductName}", product.Id, product.Name);
         return TypedResults.Created($"/api/products/{product.Id}", product);
@@ -67,6 +76,10 @@ public static class ProductEndpoints
         product.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
+        Activity.Current?.SetTag("product.id", id);
+        ProductsTelemetry.ProductsUpdated.Add(1);
+        ProductsTelemetry.ProductPrice.Record((double)product.Price, new KeyValuePair<string, object?>("operation", "update"));
+
         logger.LogInformation("Producto {ProductId} actualizado", id);
         return TypedResults.Ok(product);
     }
@@ -78,6 +91,8 @@ public static class ProductEndpoints
         if (deleted == 0)
             return TypedResults.NotFound();
 
+        Activity.Current?.SetTag("product.id", id);
+        ProductsTelemetry.ProductsDeleted.Add(1);
         logger.LogInformation("Producto {ProductId} eliminado", id);
         return TypedResults.NoContent();
     }

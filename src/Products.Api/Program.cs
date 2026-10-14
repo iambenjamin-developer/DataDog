@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Products.Api.Data;
 using Products.Api.Endpoints;
+using Products.Api.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddObservability();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
