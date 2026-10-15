@@ -56,8 +56,15 @@ public class ProductsController(AppDbContext db, ILogger<ProductsController> log
         db.Products.Add(product);
         await db.SaveChangesAsync(ct);
 
+        activity?.SetTag("caramba.id", product.Id);
+        activity?.SetTag("caramba.name", product.Name);
+        activity?.SetTag("caramba.description", product.Description);
+        activity?.SetTag("caraca", "cara");
+
         activity?.SetTag("product.id", product.Id);
         activity?.SetTag("product.name", product.Name);
+        activity?.SetTag("product.custom", request.Custom);
+        activity?.SetTag("product.fixo", "Asdf1234");
         ProductsTelemetry.ProductsCreated.Add(1);
         ProductsTelemetry.ProductPrice.Record((double)product.Price, new KeyValuePair<string, object?>("operation", "create"));
 

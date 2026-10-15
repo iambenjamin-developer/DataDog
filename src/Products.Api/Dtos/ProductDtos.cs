@@ -29,7 +29,11 @@ public abstract class ProductRequestBase : IValidatableObject
     }
 }
 
-public class CreateProductRequest : ProductRequestBase;
+public class CreateProductRequest : ProductRequestBase
+{
+    public string? Custom { get; set; }
+
+}
 
 public class UpdateProductRequest : ProductRequestBase;
 
