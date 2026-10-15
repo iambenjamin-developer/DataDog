@@ -76,3 +76,16 @@ products-api (dotnet run) ──OTLP gRPC :4317──► datadog-agent ──►
 >
 > El script `docker/postgres/init-datadog.sh` solo corre la primera vez que se crea el volumen.
 > Para reiniciar la base de datos desde cero: `docker compose down -v`.
+
+## CI/CD
+
+Workflow: [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) (GitHub Actions).
+
+```
+push / PR ──► build-test (restore, build, test) ──► publish (solo push a main)
+                                                      └─► ghcr.io/<owner>/<repo>/products-api:latest y :<sha>
+```
+
+- **CI**: en cada push y pull request a `main` compila y ejecuta los tests (`tests/Products.Api.Tests`).
+- **CD**: si estás en `main` y el CI pasó, construye la imagen (`src/Products.Api/Dockerfile`) y la publica en GitHub Container Registry con `GITHUB_TOKEN` (no requiere secretos).
+- Probar local: `docker build -f src/Products.Api/Dockerfile -t products-api .`
